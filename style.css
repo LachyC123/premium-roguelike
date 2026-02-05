@@ -1,0 +1,33 @@
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #0e0f12;
+  color: #e5e7eb;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+#game {
+  width: min(960px, 95vw);
+  height: min(540px, 90vh);
+  border: 2px solid #1f2937;
+  background: #111827;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.45);
+}
+
+canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
