@@ -10,7 +10,7 @@ export function createEnemy(scene, x, y, balance) {
   return {
     sprite,
     state,
-    update(target) {
+    update(target, delta) {
       if (!target) return;
       const direction = new Phaser.Math.Vector2(
         target.x - sprite.x,

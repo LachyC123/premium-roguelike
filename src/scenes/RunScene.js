@@ -113,23 +113,23 @@ export default class RunScene extends Phaser.Scene {
     });
   }
 
-  update(time) {
+  update(time, delta) {
     if (!this.player) {
       return;
     }
 
-    this.player.update(this.inputSystem, time, this.audio, this.fx);
+    this.player.update(this.inputSystem, time, delta, this.audio, this.fx);
 
     this.enemies.getChildren().forEach((enemySprite) => {
       const controller = enemySprite.getData("controller");
       if (controller) {
-        controller.update(this.player.sprite);
+        controller.update(this.player.sprite, delta);
       }
     });
 
     this.projectiles.update(this.enemies, (enemySprite) => {
       this.handleEnemyHit(enemySprite);
-    });
+    }, delta);
 
     if (this.dashUi) {
       const percent = this.player.dashCooldownPercent(time);

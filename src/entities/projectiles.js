@@ -19,7 +19,7 @@ export function createProjectiles(scene, balance) {
 
   return {
     group,
-    update(enemies, onHit) {
+    update(enemies, onHit, delta) {
       group.children.each((projectile) => {
         if (!projectile.active) return;
         if (

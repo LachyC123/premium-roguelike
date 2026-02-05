@@ -11,7 +11,7 @@ export function createPlayer(scene, x, y, balance) {
   return {
     sprite,
     state,
-    update(inputSystem, time, audio, fx) {
+    update(inputSystem, time, delta, audio, fx) {
       const movement = inputSystem.getMovementVector();
       const speed = balance.playerSpeed;
 
