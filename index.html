@@ -18,6 +18,12 @@ canvas{display:block}
 .ch-b{width:2px;height:7px;left:13px;bottom:1px}
 .ch-le{width:7px;height:2px;top:13px;left:1px}
 .ch-r{width:7px;height:2px;top:13px;right:1px}
+#crosshair .ch-l{transition:transform .08s ease,background .08s ease,box-shadow .08s ease}
+#crosshair.fire .ch-t{transform:translateY(-2px)}
+#crosshair.fire .ch-b{transform:translateY(2px)}
+#crosshair.fire .ch-le{transform:translateX(-2px)}
+#crosshair.fire .ch-r{transform:translateX(2px)}
+#crosshair.fire .ch-l{background:rgba(255,230,120,.95);box-shadow:0 0 6px rgba(255,215,120,.55)}
 
 /* Score Panel */
 #top-bar{position:absolute;top:0;left:50%;transform:translateX(-50%);display:flex;align-items:flex-start}
@@ -47,6 +53,8 @@ canvas{display:block}
 #a-cur{font-size:26px;font-weight:800;color:#fff}
 #a-sep{font-size:14px;color:rgba(255,255,255,0.25);margin:0 2px}
 #a-res{font-size:14px;color:rgba(255,255,255,0.35)}
+#ammo-b.rl{animation:rlpulse .42s infinite}
+@keyframes rlpulse{0%,100%{box-shadow:0 0 0 rgba(232,200,64,0)}50%{box-shadow:0 0 14px rgba(232,200,64,.4)}}
 
 /* Radar */
 #radar{position:absolute;top:10px;left:10px;width:150px;height:150px;background:rgba(0,0,0,0.65);
@@ -739,7 +747,7 @@ function buildGun(id){
 }
 buildGun('glock');
 
-function swSlot(s){if(s===G.cur)return;G.cur=s;G.rld=false;buildGun(G.slots[s]);updHUD();}
+function swSlot(s){if(s===G.cur)return;G.cur=s;G.rld=false;document.getElementById('ammo-b').classList.remove('rl');buildGun(G.slots[s]);updHUD();}
 
 // ========== CHARACTER ==========
 function mkChar(team){
@@ -843,13 +851,23 @@ function wColl(pos,r=.35){
 // ========== SHOOTING ==========
 const ray=new THREE.Raycaster();
 const tracers=[];
+const impacts=[];
+const casings=[];
 let mzLight;
+const gunFX={kick:0,tilt:0,shake:0,shakeAmp:0,bx:0,by:0,reloadN:0};
 
 function shoot(){
   const wid=G.slots[G.cur];
   if(!wid||G.rld||!G.alive)return;
   const w=WPN[wid];if((G.ammo[wid]||0)<=0)return;
   G.ammo[wid]--;G.fireT=w.rate;
+  gunFX.kick=Math.min(.22,gunFX.kick+.14+w.rec*.8);
+  gunFX.tilt+=(Math.random()-.5)*.12+w.rec*.85;
+  gunFX.shake=.08;
+  gunFX.shakeAmp=Math.min(.045,.022+w.rec*.7);
+  const ch=document.getElementById('crosshair');
+  ch.classList.add('fire');
+  setTimeout(()=>ch.classList.remove('fire'),65);
 
   // Recoil pattern
   pitch+=w.rec*(.55+Math.random()*.45);
@@ -868,12 +886,17 @@ function shoot(){
     a.mesh.traverse(c=>{if(c.isMesh)parts.push({m:c,a:a});});
   });
   const hits=ray.intersectObjects(parts.map(p=>p.m));
+  let impactPos=camera.position.clone().add(dir.clone().multiplyScalar(65));
   if(hits.length>0){
     const h=parts.find(p=>p.m===hits[0].object);
     if(h){
+      impactPos=hits[0].point.clone();
       const hs=hits[0].object.name==='head'||hits[0].point.y>h.a.mesh.position.y+1.3;
       dmgAgent(h.a,hs?w.dmg*w.hs:w.dmg,hs,wid);
+      spawnImpact(impactPos,hs?0xff5566:0xffbb66,.13,.06);
     }
+  }else{
+    spawnImpact(impactPos,0xffdd88,.1,.05);
   }
 
   // Tracer
@@ -881,6 +904,7 @@ function shoot(){
   const tl=new THREE.Line(new THREE.BufferGeometry().setFromPoints(tp),
     new THREE.LineBasicMaterial({color:0xffee88,transparent:true,opacity:.45}));
   scene.add(tl);tracers.push({m:tl,t:.07});
+  spawnCasing(w.col||0x666666);
 
   // Muzzle light
   if(!mzLight){mzLight=new THREE.PointLight(0xffaa44,0,5);wg.add(mzLight);}
@@ -889,6 +913,29 @@ function shoot(){
 
   if(G.ammo[wid]<=0&&G.rsv[wid]>0)doReload();
   updHUD();
+}
+
+function spawnImpact(pos,col,size=.1,life=.05){
+  const core=new THREE.Mesh(
+    new THREE.SphereGeometry(size,8,6),
+    new THREE.MeshStandardMaterial({color:col,metalness:.25,roughness:.35,transparent:true,opacity:1})
+  );
+  core.position.copy(pos);
+  scene.add(core);
+  impacts.push({m:core,t:life,life});
+}
+
+function spawnCasing(col){
+  const c=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.03,6),M(col,{m:.55,r:.35}));
+  c.rotation.z=Math.PI/2;
+  const q=new THREE.Vector3(.22,-.12,-.36).applyQuaternion(camera.quaternion);
+  c.position.copy(camera.position).add(q);
+  scene.add(c);
+  casings.push({
+    m:c,t:.55,
+    v:new THREE.Vector3((Math.random()-.5)*.8,.9+Math.random()*.4,(Math.random()-.5)*.8).applyQuaternion(camera.quaternion),
+    rv:new THREE.Vector3(Math.random()*7,Math.random()*8,Math.random()*6)
+  });
 }
 
 function dmgAgent(ag,dmg,hs,wid){
@@ -919,11 +966,14 @@ function doReload(){
   if(G.rld)return;const wid=G.slots[G.cur];if(!wid)return;
   const w=WPN[wid];if(G.ammo[wid]>=w.mag||(G.rsv[wid]||0)<=0)return;
   G.rld=true;G.rldT=w.rld;
+  gunFX.reloadN=0;
+  document.getElementById('ammo-b').classList.add('rl');
 }
 function finRld(){
   const wid=G.slots[G.cur],w=WPN[wid];
   const n=w.mag-G.ammo[wid],av=Math.min(n,G.rsv[wid]);
   G.ammo[wid]+=av;G.rsv[wid]-=av;G.rld=false;updHUD();
+  document.getElementById('ammo-b').classList.remove('rl');
 }
 
 // ========== PLAYER DAMAGE ==========
@@ -1041,6 +1091,7 @@ function endRnd(w){
 function startRnd(){
   G.rnd++;G.ph='freeze';G.fTime=C.freeze;G.rTime=C.rndTime;
   G.alive=true;G.hp=C.maxHP;
+  G.rld=false;document.getElementById('ammo-b').classList.remove('rl');
   const sp=CT_SP[0];camera.position.set(sp.x,C.pH,sp.z);yaw=Math.PI;pitch=0;
   agents.forEach(a=>agGrp.remove(a.mesh));agents.length=0;
   for(let i=0;i<C.bpt;i++){spawnAg('ct',i+1);spawnAg('t',i);}
@@ -1167,12 +1218,37 @@ function loop(){
 
     camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
 
-    // Weapon bob
+    // Weapon bob + recoil/reload animation
     if(mv.length()>0&&G.gnd){
       const bs=G.spr?14:8.5,ba=G.spr?.02:.011;
-      wg.position.y=Math.sin(clk.elapsedTime*bs)*ba;
-      wg.position.x=Math.cos(clk.elapsedTime*bs*.5)*ba*.5;
-    }else{wg.position.y*=.86;wg.position.x*=.86;}
+      gunFX.by=Math.sin(clk.elapsedTime*bs)*ba;
+      gunFX.bx=Math.cos(clk.elapsedTime*bs*.5)*ba*.5;
+    }else{
+      gunFX.by*=.86;gunFX.bx*=.86;
+    }
+
+    gunFX.kick=Math.max(0,gunFX.kick-dt*2.6);
+    gunFX.tilt*=Math.max(0,1-dt*10);
+    gunFX.shake=Math.max(0,gunFX.shake-dt);
+    let rY=0,rX=0,rZ=0,rBack=0,rDown=0;
+    if(G.rld&&w){
+      gunFX.reloadN=Math.min(1,1-(G.rldT/Math.max(.001,w.rld)));
+      const p=gunFX.reloadN;
+      rBack=Math.sin(Math.min(1,p*1.2)*Math.PI)*.24;
+      rDown=Math.sin(p*Math.PI)*.2;
+      rY=Math.sin(p*Math.PI*2.1)*.22;
+      rX=.28+.15*Math.sin(p*Math.PI);
+      rZ=.18*Math.sin(p*Math.PI*1.4);
+    }else{
+      gunFX.reloadN=0;
+    }
+    const sh=gunFX.shake>0?(Math.random()-.5)*gunFX.shakeAmp*gunFX.shake:0;
+    wg.position.x=gunFX.bx+sh;
+    wg.position.y=gunFX.by-rDown+sh*.5;
+    wg.position.z=-rBack-gunFX.kick*.6;
+    wg.rotation.x=rX-gunFX.kick*.7;
+    wg.rotation.y=rY+gunFX.tilt;
+    wg.rotation.z=rZ;
 
     // Recoil recovery
     if(!md&&pitch>0)pitch=Math.max(0,pitch-.8*dt);
@@ -1191,6 +1267,24 @@ function loop(){
   for(let i=tracers.length-1;i>=0;i--){
     tracers[i].t-=dt;
     if(tracers[i].t<=0){scene.remove(tracers[i].m);tracers[i].m.geometry.dispose();tracers.splice(i,1);}
+  }
+  for(let i=impacts.length-1;i>=0;i--){
+    const im=impacts[i];
+    im.t-=dt;
+    const a=Math.max(0,im.t/im.life);
+    im.m.scale.setScalar(.7+(1-a)*1.6);
+    im.m.material.opacity=a;
+    im.m.material.transparent=true;
+    if(im.t<=0){scene.remove(im.m);impacts.splice(i,1);}
+  }
+  for(let i=casings.length-1;i>=0;i--){
+    const c=casings[i];
+    c.t-=dt;
+    c.v.y-=3.2*dt;
+    c.m.position.addScaledVector(c.v,dt);
+    c.m.rotation.x+=c.rv.x*dt;c.m.rotation.y+=c.rv.y*dt;c.m.rotation.z+=c.rv.z*dt;
+    if(c.m.position.y<.06){c.m.position.y=.06;c.v.multiplyScalar(.4);c.v.y*=-.25;c.rv.multiplyScalar(.35);}
+    if(c.t<=0){scene.remove(c.m);casings.splice(i,1);}
   }
 
   drawRadar();
