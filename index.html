@@ -115,6 +115,90 @@ canvas{display:block}
 #rend h2{font-size:36px;font-weight:900;letter-spacing:5px;text-shadow:0 2px 12px rgba(0,0,0,0.5)}
 #rend.cw{background:rgba(40,60,110,0.45)}#rend.cw h2{color:#8eb8e0}
 #rend.tw{background:rgba(110,90,40,0.45)}#rend.tw h2{color:#e0d08e}
+
+
+/* ===== HUD Polish + Anti-Overlap Layer (non-destructive overrides) ===== */
+:root{
+  --hud-edge: clamp(10px,2vw,24px);
+  --panel-bg: rgba(8,10,15,0.72);
+  --panel-border: rgba(255,255,255,0.12);
+  --panel-shadow: 0 14px 30px rgba(0,0,0,0.35);
+}
+
+#top-bar{top:calc(var(--hud-edge) - 10px);z-index:14;gap:4px}
+.tp,#timer-p{
+  border:1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: var(--panel-shadow);
+}
+
+#radar{
+  top:var(--hud-edge);
+  left:var(--hud-edge);
+  width:170px;
+  height:170px;
+  background:linear-gradient(145deg,rgba(8,10,14,0.82),rgba(5,7,10,0.68));
+  border:1px solid var(--panel-border);
+  box-shadow: var(--panel-shadow);
+  border-radius:8px;
+}
+
+#kf{
+  top:calc(var(--hud-edge) + 4px);
+  right:var(--hud-edge);
+  max-width:min(42vw,520px);
+  z-index:13;
+}
+.kfe{background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.08);border-radius:3px}
+
+#buy{
+  min-width:min(560px,92vw);
+  width:min(560px,92vw);
+  max-height:min(82vh,760px);
+  border:1px solid rgba(255,255,255,0.14);
+  box-shadow: 0 20px 44px rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+#buy-i{display:grid;grid-template-columns:1fr;gap:4px}
+.bi{padding:7px 10px}
+
+#money-d,#ammo-b,.hpb{
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.34);
+}
+
+/* Medium screens: reduce collisions between top bar, radar, and kill feed */
+@media (max-width: 1200px){
+  #top-bar{top:6px;transform:translateX(-50%) scale(.94);transform-origin:top center}
+  #radar{width:150px;height:150px}
+  #kf{top:56px;max-width:46vw}
+}
+
+/* Narrow screens: stack and shrink HUD modules to prevent overlap */
+@media (max-width: 900px){
+  #top-bar{left:auto;right:var(--hud-edge);transform:none;top:var(--hud-edge);flex-direction:column;align-items:stretch;gap:2px}
+  .tp,#timer-p{min-width:58px;padding:5px 12px}
+  .tp-sc{font-size:22px}
+
+  #radar{top:var(--hud-edge);left:var(--hud-edge);width:130px;height:130px}
+
+  #kf{top:calc(var(--hud-edge) + 140px);right:var(--hud-edge);max-width:58vw}
+
+  #bot-l{left:var(--hud-edge);bottom:var(--hud-edge)}
+  #money-d{left:var(--hud-edge);bottom:calc(var(--hud-edge) + 58px)}
+  #bot-r{right:var(--hud-edge);bottom:var(--hud-edge)}
+
+  #buy{padding:16px}
+}
+
+/* Extra small height displays: clamp tall overlays so they never clip */
+@media (max-height: 760px){
+  #buy{top:52%;max-height:74vh}
+  #ann{top:26%}
+}
+
 </style>
 </head>
 <body>
