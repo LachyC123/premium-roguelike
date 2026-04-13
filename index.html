@@ -124,6 +124,19 @@ canvas{display:block}
 #rend.cw{background:rgba(40,60,110,0.45)}#rend.cw h2{color:#8eb8e0}
 #rend.tw{background:rgba(110,90,40,0.45)}#rend.tw h2{color:#e0d08e}
 
+/* Mobile Controls */
+#mobile{position:fixed;inset:0;display:none;z-index:60;pointer-events:none}
+#m-joy-wrap{position:absolute;left:18px;bottom:18px;width:146px;height:146px;border-radius:50%;
+  background:rgba(10,10,14,.28);border:1px solid rgba(255,255,255,.12);pointer-events:auto;touch-action:none}
+#m-joy{position:absolute;left:50%;top:50%;width:64px;height:64px;border-radius:50%;
+  transform:translate(-50%,-50%);background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.22)}
+#m-look{position:absolute;right:0;top:0;width:58vw;height:100%;pointer-events:auto;touch-action:none}
+#m-buttons{position:absolute;right:12px;bottom:12px;display:grid;grid-template-columns:repeat(2,64px);gap:9px;pointer-events:none}
+.mb{width:64px;height:64px;border-radius:50%;background:rgba(12,12,18,.42);border:1px solid rgba(255,255,255,.2);
+  color:#fff;font-size:12px;font-weight:700;letter-spacing:1px;display:flex;align-items:center;justify-content:center;
+  pointer-events:auto;user-select:none;-webkit-user-select:none;touch-action:none}
+.mb.big{grid-column:span 2;border-radius:16px;width:137px;height:52px;font-size:14px}
+.mb.act{background:rgba(232,200,64,.34)}
 
 /* ===== HUD Polish + Anti-Overlap Layer (non-destructive overrides) ===== */
 :root{
@@ -201,6 +214,14 @@ canvas{display:block}
   #buy{padding:16px}
 }
 
+@media (hover:none) and (pointer:coarse){
+  body{cursor:default}
+  #mobile{display:block}
+  #start .s-go{margin-top:16px}
+  .s-ctrl{font-size:9px;line-height:1.8;padding:0 16px}
+  #radar{width:120px;height:120px}
+}
+
 /* Extra small height displays: clamp tall overlays so they never clip */
 @media (max-height: 760px){
   #buy{top:52%;max-height:74vh}
@@ -216,7 +237,7 @@ canvas{display:block}
   <div class="s-sub">Tactical Shooter</div>
   <div class="s-go">Click to Deploy</div>
   <div class="s-ctrl">
-    WASD Move · Mouse Aim · Click Shoot · R Reload · Space Jump<br>
+    WASD / Joystick Move · Mouse / Drag Aim · Click / TAP Shoot · R Reload · Space Jump<br>
     1/2 Weapons · Shift Sprint · Tab Score · B Buy Menu · Q Quick Switch
   </div>
 </div>
@@ -254,6 +275,17 @@ canvas{display:block}
   <div id="radar"><canvas id="rc" width="150" height="150"></canvas></div>
 </div>
 <div id="dmg"></div>
+<div id="mobile">
+  <div id="m-joy-wrap"><div id="m-joy"></div></div>
+  <div id="m-look"></div>
+  <div id="m-buttons">
+    <div class="mb" id="mb-jump">JUMP</div>
+    <div class="mb" id="mb-reload">RLD</div>
+    <div class="mb" id="mb-swap">SWAP</div>
+    <div class="mb" id="mb-buy">BUY</div>
+    <div class="mb big" id="mb-fire">FIRE</div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -261,13 +293,13 @@ canvas{display:block}
 
 // ========== WEAPONS ==========
 const WPN={
-  glock:  {name:'Glock-18',slot:2,price:0,   dmg:28,hs:4,  rate:.15,rec:.018,mag:20,res:120,rld:2.2,spr:.02, auto:0,spd:1,  col:0x3a3a3a,len:.28},
-  usp:    {name:'USP-S',   slot:2,price:200, dmg:35,hs:4,  rate:.17,rec:.014,mag:12,res:24, rld:2.2,spr:.007,auto:0,spd:1,  col:0x555555,len:.30},
-  deagle: {name:'Deagle',  slot:2,price:700, dmg:63,hs:2.8,rate:.44,rec:.055,mag:7, res:35, rld:2.2,spr:.014,auto:0,spd:.95,col:0x888888,len:.33},
-  mac10:  {name:'MAC-10',  slot:1,price:1050,dmg:29,hs:3,  rate:.07,rec:.024,mag:30,res:100,rld:3.0,spr:.038,auto:1,spd:1,  col:0x3a3a3a,len:.36},
-  ak47:   {name:'AK-47',   slot:1,price:2700,dmg:36,hs:4,  rate:.10,rec:.030,mag:30,res:90, rld:2.5,spr:.015,auto:1,spd:.88,col:0x7a6540,len:.72},
-  m4a1:   {name:'M4A1-S',  slot:1,price:2900,dmg:33,hs:4,  rate:.09,rec:.024,mag:25,res:75, rld:3.1,spr:.011,auto:1,spd:.88,col:0x5a5a5a,len:.70},
-  awp:    {name:'AWP',     slot:1,price:4750,dmg:115,hs:2.5,rate:1.5,rec:.065,mag:5, res:30, rld:3.6,spr:.002,auto:0,spd:.72,col:0x2a5524,len:.96},
+  glock:  {name:'Glock-18',slot:2,price:0,   dmg:28,hs:4,  rate:.15,rec:.018,mag:20,res:120,rld:2.2,spr:.02, auto:0,spd:1,  col:0x3a3a3a,len:.28,bloom:.006,recov:7.5,fallS:20,fallE:55},
+  usp:    {name:'USP-S',   slot:2,price:200, dmg:35,hs:4,  rate:.17,rec:.014,mag:12,res:24, rld:2.2,spr:.007,auto:0,spd:1,  col:0x555555,len:.30,bloom:.005,recov:8.2,fallS:24,fallE:58},
+  deagle: {name:'Deagle',  slot:2,price:700, dmg:63,hs:2.8,rate:.44,rec:.055,mag:7, res:35, rld:2.2,spr:.014,auto:0,spd:.95,col:0x888888,len:.33,bloom:.012,recov:6.2,fallS:30,fallE:65},
+  mac10:  {name:'MAC-10',  slot:1,price:1050,dmg:29,hs:3,  rate:.07,rec:.024,mag:30,res:100,rld:3.0,spr:.038,auto:1,spd:1,  col:0x3a3a3a,len:.36,bloom:.01,recov:6.8,fallS:14,fallE:42},
+  ak47:   {name:'AK-47',   slot:1,price:2700,dmg:36,hs:4,  rate:.10,rec:.030,mag:30,res:90, rld:2.5,spr:.015,auto:1,spd:.88,col:0x7a6540,len:.72,bloom:.009,recov:6.5,fallS:28,fallE:70},
+  m4a1:   {name:'M4A1-S',  slot:1,price:2900,dmg:33,hs:4,  rate:.09,rec:.024,mag:25,res:75, rld:3.1,spr:.011,auto:1,spd:.88,col:0x5a5a5a,len:.70,bloom:.008,recov:7.2,fallS:30,fallE:72},
+  awp:    {name:'AWP',     slot:1,price:4750,dmg:115,hs:2.5,rate:1.5,rec:.065,mag:5, res:30, rld:3.6,spr:.002,auto:0,spd:.72,col:0x2a5524,len:.96,bloom:.001,recov:4.2,fallS:70,fallE:130},
   kevlar: {name:'Kevlar',  slot:-1,price:650, arm:100},
   helmet: {name:'Kevlar+Helmet',slot:-1,price:1000,arm:100,helm:1},
 };
@@ -284,6 +316,7 @@ const BUYLIST=[
 const C={
   pH:1.7, spd:5.2, sprint:1.55, jmp:7.5, grav:20, maxHP:100, maxAr:100,
   sens:.002, mapSz:72, wallH:4, rndTime:115, freeze:6, bpt:4, maxRnd:12,
+  mSens:.0032,
   startM:800, winM:3250, loseM:1400, killM:300,
   bAcc:.38, bReact:.55, bRate:.65, bSpd:3.5, bDmg:18,
 };
@@ -615,8 +648,10 @@ const G={
   slots:[null,null,'glock'],cur:2,
   ammo:{},rsv:{},
   rld:false,rldT:0,fireT:0,
+  spray:0,shots:0,shotCool:0,
   vy:0,gnd:true,spr:false,
   team:'ct',buyOpen:false,
+  mobile:matchMedia('(hover:none) and (pointer:coarse)').matches,
 };
 
 function gw(){const id=G.slots[G.cur];return id?WPN[id]:null;}
@@ -625,6 +660,7 @@ iAmmo('glock');
 
 // ========== INPUT ==========
 const K={};let md=false,mp=false,yaw=0,pitch=0;
+const T={joyId:null,lookId:null,jx:0,jy:0,fire:false,lookX:0,lookY:0,lastLX:0,lastLY:0};
 document.addEventListener('keydown',e=>{
   K[e.code]=true;
   if(e.code==='Tab')e.preventDefault();
@@ -649,6 +685,72 @@ document.addEventListener('mousemove',e=>{
   yaw-=e.movementX*C.sens;pitch-=e.movementY*C.sens;
   pitch=Math.max(-1.45,Math.min(1.45,pitch));
 });
+
+if(G.mobile){
+  const joyWrap=document.getElementById('m-joy-wrap');
+  const joy=document.getElementById('m-joy');
+  const look=document.getElementById('m-look');
+  const fireBtn=document.getElementById('mb-fire');
+  const jumpBtn=document.getElementById('mb-jump');
+  const reloadBtn=document.getElementById('mb-reload');
+  const swapBtn=document.getElementById('mb-swap');
+  const buyBtn=document.getElementById('mb-buy');
+
+  function setJoy(cx,cy){
+    const r=joyWrap.getBoundingClientRect();
+    const ox=cx-(r.left+r.width*.5),oy=cy-(r.top+r.height*.5);
+    const max=40,d=Math.hypot(ox,oy),s=d>max?max/d:1;
+    T.jx=(ox*s)/max;T.jy=(oy*s)/max;
+    joy.style.transform=`translate(calc(-50% + ${T.jx*40}px),calc(-50% + ${T.jy*40}px))`;
+  }
+  function resetJoy(){T.jx=0;T.jy=0;joy.style.transform='translate(-50%,-50%)';}
+
+  joyWrap.addEventListener('touchstart',e=>{
+    const t=e.changedTouches[0];T.joyId=t.identifier;setJoy(t.clientX,t.clientY);
+  },{passive:false});
+  joyWrap.addEventListener('touchmove',e=>{
+    for(const t of e.changedTouches)if(t.identifier===T.joyId)setJoy(t.clientX,t.clientY);
+    e.preventDefault();
+  },{passive:false});
+  joyWrap.addEventListener('touchend',e=>{
+    for(const t of e.changedTouches)if(t.identifier===T.joyId){T.joyId=null;resetJoy();}
+  });
+
+  look.addEventListener('touchstart',e=>{
+    const t=e.changedTouches[0];T.lookId=t.identifier;T.lastLX=t.clientX;T.lastLY=t.clientY;
+  },{passive:false});
+  look.addEventListener('touchmove',e=>{
+    for(const t of e.changedTouches){
+      if(t.identifier!==T.lookId)continue;
+      T.lookX=t.clientX-T.lastLX;T.lookY=t.clientY-T.lastLY;
+      T.lastLX=t.clientX;T.lastLY=t.clientY;
+      yaw-=T.lookX*C.mSens;pitch-=T.lookY*C.mSens;
+      pitch=Math.max(-1.45,Math.min(1.45,pitch));
+    }
+    e.preventDefault();
+  },{passive:false});
+  look.addEventListener('touchend',e=>{for(const t of e.changedTouches)if(t.identifier===T.lookId)T.lookId=null;});
+
+  const bindHold=(el,onDown,onUp)=>{
+    el.addEventListener('touchstart',e=>{onDown();el.classList.add('act');e.preventDefault();},{passive:false});
+    const end=()=>{onUp();el.classList.remove('act');};
+    el.addEventListener('touchend',end);el.addEventListener('touchcancel',end);
+  };
+  bindHold(fireBtn,()=>{T.fire=true;md=true;},()=>{T.fire=false;md=false;});
+  bindHold(jumpBtn,()=>{K['Space']=true;},()=>{K['Space']=false;});
+  bindHold(reloadBtn,()=>doReload(),()=>{});
+  bindHold(swapBtn,()=>{
+    const other=G.cur===1?2:1;
+    if(G.slots[other])swSlot(other);
+  },()=>{});
+  bindHold(buyBtn,()=>{
+    if(G.ph==='freeze'&&G.alive){
+      G.buyOpen=!G.buyOpen;
+      document.getElementById('buy').style.display=G.buyOpen?'block':'none';
+      if(G.buyOpen)buildBuy();
+    }
+  },()=>{});
+}
 
 // ========== FP WEAPON ==========
 const wg=new THREE.Group();
@@ -747,7 +849,7 @@ function buildGun(id){
 }
 buildGun('glock');
 
-function swSlot(s){if(s===G.cur)return;G.cur=s;G.rld=false;document.getElementById('ammo-b').classList.remove('rl');buildGun(G.slots[s]);updHUD();}
+function swSlot(s){if(s===G.cur)return;G.cur=s;G.rld=false;G.spray=0;G.shots=0;document.getElementById('ammo-b').classList.remove('rl');buildGun(G.slots[s]);updHUD();}
 
 // ========== CHARACTER ==========
 function mkChar(team){
@@ -861,6 +963,8 @@ function shoot(){
   if(!wid||G.rld||!G.alive)return;
   const w=WPN[wid];if((G.ammo[wid]||0)<=0)return;
   G.ammo[wid]--;G.fireT=w.rate;
+  G.shots++;G.shotCool=.22;
+  G.spray=Math.min(1.25,G.spray+w.bloom);
   gunFX.kick=Math.min(.22,gunFX.kick+.14+w.rec*.8);
   gunFX.tilt+=(Math.random()-.5)*.12+w.rec*.85;
   gunFX.shake=.08;
@@ -869,13 +973,13 @@ function shoot(){
   ch.classList.add('fire');
   setTimeout(()=>ch.classList.remove('fire'),65);
 
-  // Recoil pattern
-  pitch+=w.rec*(.55+Math.random()*.45);
-  yaw+=(Math.random()-.5)*w.rec*.35;
-
-  const dir=new THREE.Vector3(
-    (Math.random()-.5)*w.spr,(Math.random()-.5)*w.spr,-1
-  ).applyQuaternion(camera.quaternion).normalize();
+  // Recoil pattern + spray
+  const shotMul=Math.min(1.4,1+(G.shots-1)*.085);
+  pitch+=w.rec*(.45+Math.random()*.55)*shotMul;
+  yaw+=(Math.random()-.5)*w.rec*.45*shotMul;
+  const moveSpr=Math.min(.042,Math.hypot(gunFX.bx,gunFX.by)*1.7+(G.gnd?0:.018));
+  const spr=w.spr+G.spray+moveSpr;
+  const dir=new THREE.Vector3((Math.random()-.5)*spr,(Math.random()-.5)*spr,-1).applyQuaternion(camera.quaternion).normalize();
   ray.set(camera.position,dir);
 
   // Hit detection
@@ -886,13 +990,15 @@ function shoot(){
     a.mesh.traverse(c=>{if(c.isMesh)parts.push({m:c,a:a});});
   });
   const hits=ray.intersectObjects(parts.map(p=>p.m));
-  let impactPos=camera.position.clone().add(dir.clone().multiplyScalar(65));
+  let impactPos=camera.position.clone().add(dir.clone().multiplyScalar(90));
   if(hits.length>0){
     const h=parts.find(p=>p.m===hits[0].object);
     if(h){
       impactPos=hits[0].point.clone();
+      const dist=camera.position.distanceTo(hits[0].point);
       const hs=hits[0].object.name==='head'||hits[0].point.y>h.a.mesh.position.y+1.3;
-      dmgAgent(h.a,hs?w.dmg*w.hs:w.dmg,hs,wid);
+      const fall=Math.max(.55,1-Math.max(0,dist-w.fallS)/(w.fallE-w.fallS));
+      dmgAgent(h.a,(hs?w.dmg*w.hs:w.dmg)*fall,hs,wid);
       spawnImpact(impactPos,hs?0xff5566:0xffbb66,.13,.06);
     }
   }else{
@@ -900,7 +1006,7 @@ function shoot(){
   }
 
   // Tracer
-  const tp=[camera.position.clone(),camera.position.clone().add(dir.clone().multiplyScalar(65))];
+  const tp=[camera.position.clone(),camera.position.clone().add(dir.clone().multiplyScalar(90))];
   const tl=new THREE.Line(new THREE.BufferGeometry().setFromPoints(tp),
     new THREE.LineBasicMaterial({color:0xffee88,transparent:true,opacity:.45}));
   scene.add(tl);tracers.push({m:tl,t:.07});
@@ -972,7 +1078,7 @@ function doReload(){
 function finRld(){
   const wid=G.slots[G.cur],w=WPN[wid];
   const n=w.mag-G.ammo[wid],av=Math.min(n,G.rsv[wid]);
-  G.ammo[wid]+=av;G.rsv[wid]-=av;G.rld=false;updHUD();
+  G.ammo[wid]+=av;G.rsv[wid]-=av;G.rld=false;G.spray=0;G.shots=0;updHUD();
   document.getElementById('ammo-b').classList.remove('rl');
 }
 
@@ -1202,12 +1308,14 @@ function loop(){
     const fwd=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
     const rt=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
     const mv=new THREE.Vector3();
-    if(K['KeyW'])mv.add(fwd);if(K['KeyS'])mv.sub(fwd);
-    if(K['KeyD'])mv.add(rt);if(K['KeyA'])mv.sub(rt);
+    if(K['KeyW']||T.jy<-0.18)mv.add(fwd.clone().multiplyScalar(K['KeyW']?1:Math.min(1,-T.jy)));
+    if(K['KeyS']||T.jy>0.18)mv.sub(fwd.clone().multiplyScalar(K['KeyS']?1:Math.min(1,T.jy)));
+    if(K['KeyD']||T.jx>0.18)mv.add(rt.clone().multiplyScalar(K['KeyD']?1:Math.min(1,T.jx)));
+    if(K['KeyA']||T.jx<-0.18)mv.sub(rt.clone().multiplyScalar(K['KeyA']?1:Math.min(1,-T.jx)));
     if(mv.length()>0)mv.normalize().multiplyScalar(spd*dt);
     camera.position.add(mv);
 
-    if(K['Space']&&G.gnd){G.vy=C.jmp;G.gnd=false;}
+    if((K['Space'])&&G.gnd){G.vy=C.jmp;G.gnd=false;}
     G.vy-=C.grav*dt;camera.position.y+=G.vy*dt;
     if(camera.position.y<=C.pH){camera.position.y=C.pH;G.vy=0;G.gnd=true;}
 
@@ -1255,6 +1363,9 @@ function loop(){
 
     // Shoot
     G.fireT-=dt;
+    G.shotCool-=dt;
+    if(G.shotCool<=0)G.shots=Math.max(0,G.shots-dt*12);
+    G.spray=Math.max(0,G.spray-dt*(w?w.recov:6.5));
     if(G.ph==='live'&&md&&G.fireT<=0&&!G.rld&&G.alive){
       const w2=gw();if(w2){if(w2.auto||!mp)shoot();}
     }
@@ -1294,10 +1405,12 @@ function loop(){
 // ========== START ==========
 document.getElementById('start').addEventListener('click',()=>{
   document.getElementById('start').style.display='none';
-  G.on=true;ren.domElement.requestPointerLock();startRnd();
+  G.on=true;
+  if(!G.mobile)ren.domElement.requestPointerLock();
+  startRnd();
 });
 document.addEventListener('click',()=>{
-  if(G.on&&!document.pointerLockElement&&!G.buyOpen)ren.domElement.requestPointerLock();
+  if(!G.mobile&&G.on&&!document.pointerLockElement&&!G.buyOpen)ren.domElement.requestPointerLock();
 });
 window.addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight);
