@@ -5,11 +5,15 @@ import { UI } from "./ui.js";
 import { MAP_RADIUS, START_BOT_COUNT, MATCH_SECONDS, GRAVITY, WEAPONS, LOOT_TABLE, AMMO_BY_WEAPON } from "./config.js";
 
 const rand = (a, b) => a + Math.random() * (b - a);
+const cloneEntry = (value) => {
+  if (typeof globalThis.structuredClone === "function") return globalThis.structuredClone(value);
+  return JSON.parse(JSON.stringify(value));
+};
 const pickWeighted = (table) => {
   const total = table.reduce((s, t) => s + t.weight, 0);
   let r = Math.random() * total;
-  for (const e of table) { r -= e.weight; if (r <= 0) return structuredClone(e); }
-  return structuredClone(table[0]);
+  for (const e of table) { r -= e.weight; if (r <= 0) return cloneEntry(e); }
+  return cloneEntry(table[0]);
 };
 
 class Game {
