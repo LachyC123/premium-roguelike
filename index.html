@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>Dustfall Royale</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="titleScreen" class="screen visible">
+    <div class="title-card">
+      <h1>DUSTFALL ROYALE</h1>
+      <p>Drop in. Loot fast. Survive the storm.</p>
+      <button id="playBtn">PLAY MATCH</button>
+      <small>Original low-poly battle royale for mobile browsers.</small>
+    </div>
+  </div>
+
+  <div id="gameUI" class="hidden">
+    <div class="hud top-left" id="weaponSlots"></div>
+    <div class="hud top-right">
+      <div id="aliveCounter">0 ALIVE</div>
+      <button id="pauseBtn" class="tiny-btn">II</button>
+    </div>
+
+    <div id="centerCrosshair">+</div>
+
+    <div class="hud bottom-center">
+      <div id="ammoReadout">-- / --</div>
+      <div class="health-wrap">
+        <span id="armorText">Armor: 0</span>
+        <div class="bar"><div id="healthBar"></div></div>
+      </div>
+    </div>
+
+    <div class="hud bottom-right" id="miniMapWrap">
+      <canvas id="miniMap" width="180" height="180"></canvas>
+    </div>
+
+    <div id="controlsLayer">
+      <div id="leftControls">
+        <div id="joystickBase"><div id="joystickKnob"></div></div>
+      </div>
+      <div id="rightControls">
+        <button id="btnAim" class="circle-btn">AIM</button>
+        <button id="btnFire" class="circle-btn">FIRE</button>
+        <button id="btnJump" class="circle-btn">JUMP</button>
+        <button id="btnInv" class="circle-btn">BAG</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="inventoryPanel" class="hidden panel">
+    <div class="panel-grid">
+      <section>
+        <h3>GROUND LOOT</h3>
+        <ul id="groundLootList"></ul>
+      </section>
+      <section>
+        <h3>BACKPACK</h3>
+        <ul id="backpackList"></ul>
+      </section>
+      <section>
+        <h3>EQUIPPED</h3>
+        <ul id="equippedList"></ul>
+      </section>
+    </div>
+    <div class="panel-footer">
+      <span id="inventoryHint">Tap item to pick/use/equip.</span>
+      <button id="closeInv">CLOSE</button>
+    </div>
+  </div>
+
+  <div id="endScreen" class="screen hidden">
+    <div class="title-card">
+      <h2 id="endTitle">Match Over</h2>
+      <p id="endSub">Try again.</p>
+      <button id="restartBtn">PLAY AGAIN</button>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
